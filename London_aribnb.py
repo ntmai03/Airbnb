@@ -1,16 +1,28 @@
-# import library
+# Commonn processing
 import pandas as pd
 import numpy as np
+from collections import Counter
+
+# Visualization
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.style.use('ggplot')
 import seaborn as sns
-from collections import Counter
 
+# NLP
+from nltk.corpus import stopwords
+from wordcloud import WordCloud, STOPWORDS
+import string
+import nltk
+import re
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+# Configuration
 pd.set_option('display.max_rows', 500)
-pd.set_option('display.max_columns', 50)
-pd.set_option('display.width', 175)
-
+pd.set_option('display.max_columns', 100)
+pd.set_option('display.width', 505)
 
 ################################################################################
 # Read data
@@ -21,6 +33,28 @@ listing_df = listing_df[['id','name','summary','longitude','latitude','space','d
 listing_df.shape
 listing_df.head()
 listing_df.describe()
+# unique values for all fields
+listing_df.apply(lambda x:len(x.unique()))
+# count unique values of a variable
+listing_df.property_type.value_counts()
+listing_df.room_type.value_counts()
+# Datatype of a data frame
+listing_df.info()
+listing_df.columns
+
+
+calendar_df =pd.read_csv("D:\\MyProjects\\01_Airbnb\\London_calendar.csv")
+calendar_df.shape
+calendar_df.head()
+calendar_df.describe()
+calendar_df.apply(lambda x:len(x.unique()))
+
+
+review_df =pd.read_csv("D:\\MyProjects\\01_Airbnb\\London_reviews.csv")
+review_df.shape
+review_df.head()
+review_df.describe()
+review_df.apply(lambda x:len(x.unique()))
 
 ################################################################################
 # Data preprocessing: cleaning and transfoming data
@@ -51,6 +85,12 @@ inputDF = inputDF[inputDF.review_scores_rating  > 0]
 inputDF = inputDF[inputDF.reviews_per_month > 0]
 inputDF = inputDF[inputDF.accommodates  > 0]
 
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+calendar
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+#replacing NaN values with 0
+calendar_df.fillna(0, inplace=True)
+calendar_df = calendar_df[calendar_df.price != 0]
 
 
 ################################################################################
@@ -97,36 +137,17 @@ plt.figure(figsize=(12,12))
 sns.heatmap(listing_df.groupby([
         'neighbourhood_cleansed', 'bedrooms']).price.mean().unstack(),annot=True, fmt=".0f")
 
-
-
-############################################################
-# Analys=ze 1
-############################################################
-
-inputDF = pd.read_csv('D:\\MyProjects\\01_Airbnb\\Boston_listings.csv')
-inputDF=inputDF[['id','name','summary','longitude','latitude','space','description','instant_bookable','neighborhood_overview','neighbourhood_cleansed','host_id','host_name','host_since',
-                 'host_response_time','street', 'zipcode','review_scores_rating','property_type','room_type','accommodates','bathrooms','bedrooms','beds','reviews_per_month','amenities','cancellation_policy','number_of_reviews','price']]
-
-
-summaryDF = listing_df[['summary','price']]
-summaryDF = summaryDF[pd.notnull(summaryDF['summary'])]
-summaryDF = summaryDF[summaryDF['summary']!=0]
-summaryDF = summaryDF.sort_values('price',ascending=[0])
-top100DF = summaryDF.head(100)
-top100DF.head()
-
-
-from nltk.corpus import stopwords
-import string
-import nltk
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Analyzing and plotting word cloud for summary
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+summary_df = listing_df[['summary','price']]
+summary_df = summary_df[pd.notnull(summary_df['summary'])]
+summary_df = summary_df[summary_df['summary']!=0]
+summary_df = summary_df.sort_values('price',ascending=[0])
+top100_df = summary_df.head(100)
 words=''
-for index,row in top100DF.iterrows():
+for index,row in top100_df.iterrows():
     words += row['summary']
-    
 string_punctuation = string.punctuation
 ignoreChar=['\r','\n','',' ',"'s"]
 nums=['0','1','2','3','4','5','6','7','8','9']
@@ -137,60 +158,43 @@ wnl = nltk.WordNetLemmatizer()
 final_data=[wnl.lemmatize(data) for data in filtered_data]
 final_words=' '.join(final_data)
 final_words[:50]
-
-from wordcloud import WordCloud, STOPWORDS
-import matplotlib.pyplot as plt
-
 wordcloud = WordCloud(width = 1000, height = 700).generate(final_words)
 plt.figure(figsize=(18,12))
 plt.imshow(wordcloud)
 plt.axis("off")
 plt.show()
 
-#Analyzing what amenities costs more ?
-import re
-
-amenitiesDF = inputDF[['amenities','price','id',]]
-amenitiesDFTopper = amenitiesDF.sort_values('price',ascending=[0])
-amenitiesDFtop=amenitiesDFTopper.head(30)
+#Analyzing what amenities costs more ? top price
+amenities_df = listing_df[['amenities','price','id',]]
+amenitiesDFTopper = amenities_df.sort_values('price',ascending=[0])
+amenitiesDFtop = amenitiesDFTopper.head(30)
 allemenities = ''
 for index,row in amenitiesDFtop.iterrows():
     p = re.sub('[^a-zA-Z]+',' ', row['amenities'])
     allemenities+=p
-
 allemenities_data=nltk.word_tokenize(allemenities)
 filtered_data=[word for word in allemenities_data if word not in stopwords.words('english')] 
 wnl = nltk.WordNetLemmatizer() 
 allemenities_data=[wnl.lemmatize(data) for data in filtered_data]
 allemenities_words=' '.join(allemenities_data)
-
-
-from wordcloud import WordCloud, STOPWORDS
-import matplotlib.pyplot as plt
-
 wordcloud = WordCloud(width = 1000, height = 700).generate(allemenities_words)
 plt.figure(figsize=(18,12))
 plt.imshow(wordcloud)
 plt.axis("off")
 plt.show()
 
-amenitiesDFbott =amenitiesDF.sort_values('price',ascending=[1])
+#Analyzing what amenities costs more ? bottom price
+amenitiesDFbott =amenities_df.sort_values('price',ascending=[1])
 amenitiesDFbottom=amenitiesDFbott.head(30)
-
 allemenitiesb = ''
 for index,row in amenitiesDFbottom.iterrows():
     p = re.sub('[^a-zA-Z]+',' ', row['amenities'])
     allemenitiesb+=p
-
 allemenities_datab=nltk.word_tokenize(allemenitiesb)
 filtered_datab=[word for word in allemenities_datab if word not in stopwords.words('english')] 
 wnl = nltk.WordNetLemmatizer() 
 allemenities_datab=[wnl.lemmatize(data) for data in filtered_datab]
 allemenities_wordsb=' '.join(allemenities_datab)
-
-from wordcloud import WordCloud, STOPWORDS
-import matplotlib.pyplot as plt
-
 wordcloud = WordCloud(width = 1000, height = 700).generate(allemenities_wordsb)
 plt.figure(figsize=(18,12))
 plt.imshow(wordcloud)
@@ -198,182 +202,48 @@ plt.axis("off")
 plt.show()
 
 
-############################################################
-# Analys=ze 2: Where to Invest a Property in BOSTON to get maximum returns from Airbnb?
-############################################################
-# cleaning the data
-
-import pandas as pd
-import numpy as np
-
-inputDF = pd.read_csv('D:\\MyProjects\\01_Airbnb\\Boston_listings.csv')
-inputDF=inputDF[['id','name','summary','longitude','latitude','space','description','instant_bookable','neighborhood_overview','neighbourhood_cleansed','host_id','host_name','host_since',
-                 'host_response_time','street', 'zipcode','review_scores_rating','property_type','room_type','accommodates','bathrooms','bedrooms','beds','reviews_per_month','amenities','cancellation_policy','number_of_reviews','price']]
-
-# replacing NaN values with 0
-inputDF.fillna(0, inplace=True)
-
-#Extracting prices from the table
-price = inputDF['price']
-prices=[]
-
-#clean the data to make it float
-for p in price:
-    p=float(p[1:].replace(',',''))
-    prices.append(p)
-
-#replace the price column with the new column
-inputDF['price']=prices
-
-#exclude the listings with 0 for price,beds,bedrooms,accomodates etc
-inputDF = inputDF[inputDF.bathrooms >0]
-inputDF = inputDF[inputDF.bedrooms > 0]
-inputDF = inputDF[inputDF.beds > 0]
-inputDF = inputDF[inputDF.price  > 0]
-inputDF = inputDF[inputDF.review_scores_rating  > 0]
-inputDF = inputDF[inputDF.reviews_per_month > 0]
-inputDF = inputDF[inputDF.accommodates  > 0]
-
+################################################################################
+# P8: Investment/ Business opportunities
+################################################################################
 # Average prices for each type of listing
-
-avgPrice_DF=inputDF.groupby('room_type').price.mean()
-avgPrice_DF=avgPrice_DF.reset_index()
-avgPrice_DF=avgPrice_DF.rename(columns={'price':'average_Price'})
-avgPrice_DF
-
-# Geographical Clusters to find out which area in Boston has maximum listings on Airbnb
-
-# seggregating each type of property
-
-home = inputDF[(inputDF.room_type == 'Entire home/apt')]
-private = inputDF[(inputDF.room_type == 'Private room')]
-shared = inputDF[(inputDF.room_type == 'Shared room')]
-
-location_home = home[['latitude', 'longitude']]
-location_private = private[['latitude', 'longitude']]
-location_shared = shared[['latitude', 'longitude']]
-
-
-from bokeh.io import push_notebook, show, output_notebook
-import os
-
-from bokeh.models import (
-  GMapPlot, GMapOptions, ColumnDataSource, Circle, DataRange1d, PanTool, WheelZoomTool, BoxSelectTool
-)
-output_notebook()
-map_options = GMapOptions(lat=42.3318, lng=-71.1212, map_type="roadmap", zoom=11)
-
-plot = GMapPlot(
-    x_range=DataRange1d(), y_range=DataRange1d(), map_options=map_options,width=1200, height=750
-)
-plot.title.text = "Boston"
-
-plot.api_key = os.environ['data_download_key']
-
-source = ColumnDataSource(
-    data=dict(
-        lat_home=location_home['latitude'],
-        lon_home=location_home['longitude'],
-        lat_private=location_private['latitude'],
-        lon_private=location_private['longitude'],
-        lat_shared=location_shared['latitude'],
-        lon_shared=location_shared['longitude']
-    )
-)
-
-
-circle_home = Circle(x="lon_home", y="lat_home", size=4, fill_color="blue", fill_alpha=0.9, line_color=None)
-circle_private =  Circle(x="lon_private", y="lat_private", size=4, fill_color="red", fill_alpha=0.9, line_color=None)
-circle_shared =  Circle(x="lon_shared", y="lat_shared", size=4, fill_color="#006600", fill_alpha=0.9, line_color=None)
-
-plot.add_glyph(source, circle_home)
-plot.add_glyph(source, circle_private)
-plot.add_glyph(source, circle_shared)
-
-plot.add_tools(PanTool(), WheelZoomTool(), BoxSelectTool())
-show(plot)
-
+avgPrice_df = listing_df.groupby('room_type').price.mean()
+avgPrice_df = avgPrice_df.reset_index()
+avgPrice_df = avgPrice_df.rename(columns={'price':'average_Price'})
+avgPrice_df
+home = listing_df[(listing_df.room_type == 'Entire home/apt')]
+private = listing_df[(listing_df.room_type == 'Private room')]
+shared = listing_df[(listing_df.room_type == 'Shared room')]
 
 # grouping neighbourhood by number of listings
-
-neighbourhood_DF=home.groupby('neighbourhood_cleansed').id.count()
-neighbourhood_DF=neighbourhood_DF.reset_index()
-neighbourhood_DF=neighbourhood_DF.rename(columns={'id':'Number_Of_Listings'})
-neighbourhood_DF=neighbourhood_DF.sort_values('Number_Of_Listings',ascending=[0])
-neighbourhood_DF.head()
-
+neighbourhood_df = listing_df.groupby('neighbourhood_cleansed').id.count()
+neighbourhood_df = neighbourhood_df.reset_index()
+neighbourhood_df = neighbourhood_df.rename(columns={'id':'Number_Of_Listings'})
+neighbourhood_df = neighbourhood_df.sort_values('Number_Of_Listings',ascending=[0])
+neighbourhood_df.head()
 # grouping neighbourhood by average price of listings
-
-neighbourhoodPrice_DF=home.groupby('neighbourhood_cleansed').price.mean()
-neighbourhoodPrice_DF=neighbourhoodPrice_DF.reset_index()
-neighbourhoodPrice_DF=neighbourhoodPrice_DF.rename(columns={'price':'Average_Price'})
-neighbourhoodPrice_DF=neighbourhoodPrice_DF.sort_values('Average_Price',ascending=[0])
-neighbourhoodPrice_DF.head()
-
+neighbourhoodPrice_df = home.groupby('neighbourhood_cleansed').price.mean()
+neighbourhoodPrice_df = neighbourhoodPrice_df.reset_index()
+neighbourhoodPrice_df = neighbourhoodPrice_df.rename(columns={'price':'Average_Price'})
+neighbourhoodPrice_df = neighbourhoodPrice_df.sort_values('Average_Price',ascending=[0])
+neighbourhoodPrice_df.head()
 #Merging above two dataframes
-
-mergeDF=pd.merge(neighbourhood_DF,neighbourhoodPrice_DF,on='neighbourhood_cleansed')
-mergeDF.head()
-
-
-
-# visualizing the frequency of listings on the basis of neighbourhood where room type is entire apartment
-import matplotlib
-import matplotlib.pyplot as plt
-matplotlib.style.use('ggplot')
-
-objects = neighbourhood_DF['neighbourhood_cleansed']
-y_pos = neighbourhood_DF['Number_Of_Listings']
-
-neighbourhood_DF.plot(kind='bar', 
-           x='neighbourhood_cleansed',
-           y='Number_Of_Listings',
-           color = '#66c2ff', 
-           figsize =(15,8), 
-           title = 'Boston Neighborhood Frequency', 
-           legend = False)
-
-plt.ylabel('Number Of Listings')
-
-
-# Exploring the relationship between price and neighbourhood
-
-from bokeh.charts import BoxPlot, output_file, show
-from bokeh.io import push_notebook, show, output_notebook
-
-output_notebook()
-p = BoxPlot(home, values='price', label='neighbourhood_cleansed',width=900,
-            title="Relationship between Price and neighbourhood")
-
-show(p)
+merge_df =pd.merge(neighbourhood_df,neighbourhoodPrice_df,on='neighbourhood_cleansed')
+merge_df.head()
 
 # Now lets visualize average price of these listings on the basis of neighbourhood where room type is entire apartment
-import matplotlib
-import matplotlib.pyplot as plt
-matplotlib.style.use('ggplot')
-
-objects = neighbourhoodPrice_DF['neighbourhood_cleansed']
-y_pos = neighbourhoodPrice_DF['Average_Price']
-
-neighbourhoodPrice_DF.plot(kind='bar', 
+objects = neighbourhoodPrice_df['neighbourhood_cleansed']
+y_pos = neighbourhoodPrice_df['Average_Price']
+neighbourhoodPrice_df.plot(kind='bar', 
            x='neighbourhood_cleansed',
            y='Average_Price',
            color = '#66c2ff', 
            figsize =(15,8), 
            title = 'Boston Neighborhood Average price', 
            legend = False)
-
 plt.ylabel('Average Price')
 
 # Let's look at the differences between the words used in listings for Airbnb locations in different Boston neighborhoods
-
-import re
-import nltk
-from nltk.corpus import stopwords
-from collections import Counter
-
-uniqueNeighborhoods = inputDF.neighbourhood_cleansed.unique().tolist()
-
+uniqueNeighborhoods = listing_df.neighbourhood_cleansed.unique().tolist()
 #function to clean the data and compile a list of most common words
 def cleanData(neighbrhood_name,descrip):
     p = re.sub('[^a-zA-Z]+',' ', descrip)
@@ -386,41 +256,34 @@ def cleanData(neighbrhood_name,descrip):
     for w in counts.most_common(5):
         commn_words.append(w[0])
     return ' '.join(commn_words)
-
 summ={}
 for n in uniqueNeighborhoods:
     text=''
-    for index,row in inputDF.iterrows():
+    for index,row in listing_df.iterrows():
         if row['neighbourhood_cleansed']==n:
             if ((row['description']!=0) & (row['space']!=0) & (row['neighborhood_overview']!=0)):
                 text =text+row['description']+row['space']+row['neighborhood_overview']
     summ[n]=text
-
-final_DF_neighbrhood=pd.DataFrame(columns=['neighborhood','top 5 words in description'])
+final_df_neighbrhood=pd.DataFrame(columns=['neighborhood','top 5 words in description'])
 for a in summ.items():
     top5words=cleanData(a[0],a[1])
-    final_DF_neighbrhood=final_DF_neighbrhood.append(pd.Series([a[0],top5words],index=['neighborhood','top 5 words in description']),ignore_index=True)
+    final_df_neighbrhood=final_df_neighbrhood.append(pd.Series([a[0],top5words],index=['neighborhood','top 5 words in description']),ignore_index=True)
 
-final_DF_neighbrhood.to_csv('top_words_description.csv')
-final_DF_neighbrhood.head()
+final_df_neighbrhood.to_csv('top_words_description.csv')
+final_df_neighbrhood.head()
+
+
 
 ############################################################
-# Analysize 3: SEASONAL PATTERN OF PRICES
+# PART 6: Time Series Analysis
 ############################################################
-#Cleaning the data
 
-import pandas as pd
-import numpy as np
-import re
-
-calendarDF=pd.read_csv("D:\\MyProjects\\01_Airbnb\\Boston_calendar.csv")
-
-#replacing NaN values with 0
-calendarDF.fillna(0, inplace=True)
-calendarDF = calendarDF[calendarDF.price != 0]
-
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+SEASONAL PATTERN OF PRICES
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #Extracting prices from the table
-price = calendarDF['price']
+
+price = calendar_df['price']
 prices=[]
 
 for p in price:
@@ -429,6 +292,10 @@ for p in price:
     
 #replace the price column with the new column
 calendarDF['price']=prices
+
+calendar_df['price'] = calendar_df['price'].apply(lambda x:float(x[1:].replace(',','')))
+
+
 
 calendarDF = calendarDF[calendarDF.price >= 0]
 
@@ -924,4 +791,50 @@ print ("Linear Regression: " + str(linear_reg_error))
 
 
 
+################################################################################
+# P10: Others
+################################################################################
+# Geographical Clusters to find out which area in Boston has maximum listings on Airbnb
+# seggregating each type of property
+home = listing_df[(listing_df.room_type == 'Entire home/apt')]
+private = listing_df[(listing_df.room_type == 'Private room')]
+shared = listing_df[(listing_df.room_type == 'Shared room')]
+location_home = home[['latitude', 'longitude']]
+location_private = private[['latitude', 'longitude']]
+location_shared = shared[['latitude', 'longitude']]
 
+from bokeh.io import push_notebook, show, output_notebook
+import os
+
+from bokeh.models import (
+  GMapPlot, GMapOptions, ColumnDataSource, Circle, DataRange1d, PanTool, WheelZoomTool, BoxSelectTool
+)
+output_notebook()
+map_options = GMapOptions(lat=42.3318, lng=-71.1212, map_type="roadmap", zoom=11)
+
+plot = GMapPlot(
+    x_range=DataRange1d(), y_range=DataRange1d(), map_options=map_options,width=1200, height=750
+)
+plot.title.text = "Boston"
+
+plot.api_key = os.environ['data_download_key']
+source = ColumnDataSource(
+    data=dict(
+        lat_home=location_home['latitude'],
+        lon_home=location_home['longitude'],
+        lat_private=location_private['latitude'],
+        lon_private=location_private['longitude'],
+        lat_shared=location_shared['latitude'],
+        lon_shared=location_shared['longitude']
+    )
+)
+
+circle_home = Circle(x="lon_home", y="lat_home", size=4, fill_color="blue", fill_alpha=0.9, line_color=None)
+circle_private =  Circle(x="lon_private", y="lat_private", size=4, fill_color="red", fill_alpha=0.9, line_color=None)
+circle_shared =  Circle(x="lon_shared", y="lat_shared", size=4, fill_color="#006600", fill_alpha=0.9, line_color=None)
+
+plot.add_glyph(source, circle_home)
+plot.add_glyph(source, circle_private)
+plot.add_glyph(source, circle_shared)
+plot.add_tools(PanTool(), WheelZoomTool(), BoxSelectTool())
+show(plot)
