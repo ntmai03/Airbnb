@@ -18,6 +18,25 @@ import re
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+nltk.download('vader_lexicon')
+from langdetect import detect
+  
+# Datetime
+from datetime import date
+import datetime
+import calendar
+import holidays
+
+# predictive model
+import sklearn.metrics as metrics
+from sklearn.grid_search import GridSearchCV
+from sklearn.grid_search import RandomizedSearchCV
+from sklearn import metrics
+from sklearn import datasets
+from sklearn import cross_validation
+from sklearn import linear_model
+from sklearn import ensemble
 
 # Configuration
 pd.set_option('display.max_rows', 500)
@@ -56,6 +75,8 @@ review_df.head()
 review_df.describe()
 review_df.apply(lambda x:len(x.unique()))
 
+
+
 ################################################################################
 # Data preprocessing: cleaning and transfoming data
 ################################################################################
@@ -78,12 +99,8 @@ listing_df['price'] = listing_df['price'].apply(lambda x:float(x[1:].replace(','
 listing_df = listing_df[listing_df.price  > 0]
 listing_df.shape
 
-inputDF = inputDF[inputDF.bathrooms >0]
-inputDF = inputDF[inputDF.bedrooms > 0]
-inputDF = inputDF[inputDF.beds > 0]
-inputDF = inputDF[inputDF.review_scores_rating  > 0]
-inputDF = inputDF[inputDF.reviews_per_month > 0]
-inputDF = inputDF[inputDF.accommodates  > 0]
+review_df = review_df.dropna()
+review_df.shape
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 calendar
@@ -91,6 +108,8 @@ calendar
 #replacing NaN values with 0
 calendar_df.fillna(0, inplace=True)
 calendar_df = calendar_df[calendar_df.price != 0]
+calendar_df.shape
+calendar_df.head()
 
 
 ################################################################################
@@ -282,223 +301,144 @@ final_df_neighbrhood.head()
 SEASONAL PATTERN OF PRICES
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #Extracting prices from the table
-
-price = calendar_df['price']
-prices=[]
-
-for p in price:
-    p = re.sub('[^0-9.]+','', p)
-    prices.append(float(p))
-    
-#replace the price column with the new column
-calendarDF['price']=prices
-
 calendar_df['price'] = calendar_df['price'].apply(lambda x:float(x[1:].replace(',','')))
 
-
-
-calendarDF = calendarDF[calendarDF.price >= 0]
-
 #separating date column into day month and year
-calendarDF['Year'],calendarDF['Month'],calendarDF['Day']=calendarDF['date'].str.split('-',2).str
-calendarDF.head()
+calendar_df.head()
+calendar_df['Year'],calendar_df['Month'],calendar_df['Day'] = calendar_df['date'].str.split('-',2).str
 
-
-yearDF=calendarDF.groupby(['Year','Month']).price.mean()
-yearDF=yearDF.reset_index()
-yearDF=yearDF.rename(columns={'price':'average_Price'})
-yearDF['year-Month']=yearDF['Year'].map(str) + "-" + yearDF['Month'].map(str)
-yearDF.to_csv('year_month_data.csv')
-yearDF.head()
+# create year-month df by averagePrice
+year_df = calendar_df.groupby(['Year','Month']).price.mean()
+year_df = year_df.reset_index()
+year_df = year_df.rename(columns={'price':'average_Price'})
+year_df['year-Month'] = year_df['Year'].map(str) + "-" + year_df['Month'].map(str)
 
 # visualizing the trend of year/Month and average prices of the listing
-
-import matplotlib
-import matplotlib.pyplot as plt
-matplotlib.style.use('ggplot')
-
-objects = yearDF['year-Month']
-y_pos = yearDF['average_Price']
-
-yearDF.plot(kind='bar', 
+objects = year_df['year-Month']
+y_pos = year_df['average_Price']
+year_df.plot(kind='bar', 
            x='year-Month',
            y='average_Price',
            color = '#66c2ff', 
            figsize =(15,8), 
-           title = 'Boston Airbnb prices trend over months', 
+           title = 'London Airbnb prices trend over months', 
            legend = False)
 plt.ylabel('Average Price')
 
 #getting day name from date data and holidays
-
-from datetime import date
-import datetime
-import calendar
-import holidays
-
-calendarDF.fillna(0, inplace=True)
-us_holidays = holidays.US()
-
-calendarDF['day_Name']='default'
-calendarDF['holiday']='False'
-calendarDF['us_holidays_name']='working'
-for index,row in calendarDF.iterrows():
+calendar_df.fillna(0, inplace=True)
+calendar_df.shape
+uk_holidays = holidays.UK()
+calendar_df['day_Name']='default'
+calendar_df['holiday']='False'
+calendar_df['uk_holidays_name']='working'
+for index,row in calendar_df.iterrows():
     sdate = datetime.date(int(row['Year']),int(row['Month']),int(row['Day']))
-    vall=date(int(row['Year']),int(row['Month']),int(row['Day'])) in us_holidays
-    calendarDF.set_value(index,'day_Name',calendar.day_name[sdate.weekday()])
-    calendarDF.set_value(index,'holiday',vall)
-    calendarDF.set_value(index,'us_holidays_name',us_holidays.get(sdate))
-calendarDF.to_csv('holidays_data.csv')
-calendarDF.head()
-
+    vall=date(int(row['Year']),int(row['Month']),int(row['Day'])) in uk_holidays
+    calendar_df.set_value(index,'day_Name',calendar.day_name[sdate.weekday()])
+    calendar_df.set_value(index,'holiday',vall)
+    calendar_df.set_value(index,'uk_holidays_name',uk_holidays.get(sdate))
+calendar_df.head()
+calendar_df.to_csv('D:\\MyProjects\\01_Airbnb\\preprocessed_London_calendar.csv')
 
 #calculating Average price for each day
-
-dayDF=calendarDF.groupby('day_Name').price.mean()
-dayDF=dayDF.reset_index()
-dayDF['day_num']=0
-
-for index,row in dayDF.iterrows():
+day_df = calendar_df.groupby('day_Name').price.mean()
+day_df = day_df.reset_index()
+day_df['day_num'] = 0
+for index,row in day_df.iterrows():
     if row['day_Name']=='Monday':
-        dayDF.set_value(index,'day_num',1)
+        day_df.set_value(index,'day_num',1)
     if row['day_Name']=='Tuesday':
-        dayDF.set_value(index,'day_num',2)
+        day_df.set_value(index,'day_num',2)
     if row['day_Name']=='Wednesday':
-        dayDF.set_value(index,'day_num',3)
+        day_df.set_value(index,'day_num',3)
     if row['day_Name']=='Thursday':
-        dayDF.set_value(index,'day_num',4)
+        day_df.set_value(index,'day_num',4)
     if row['day_Name']=='Friday':
-        dayDF.set_value(index,'day_num',5)
+        day_df.set_value(index,'day_num',5)
     if row['day_Name']=='Saturday':
-        dayDF.set_value(index,'day_num',6)
+        day_df.set_value(index,'day_num',6)
     if row['day_Name']=='Sunday':
-        dayDF.set_value(index,'day_num',7)
-dayDF=dayDF.sort_values('day_num',ascending=[1])
-dayDF=dayDF.rename(columns={'price':'Average_Price'})
-dayDF
-
-
-from bokeh import Scatter, output_notebook, show
-output_notebook()
-
-p = Scatter(dayDF, x='day_Name', y='Average_Price', title="average price trend over a Week for all the listings",
-            xlabel="Days Of Week", ylabel="Average Price")
-show(p)
-
-
+        day_df.set_value(index,'day_num',7)
+day_df = day_df.sort_values('day_num',ascending=[1])
+day_df = day_df.rename(columns={'price':'Average_Price'})
+day_df
 
 #checking which holiday has maximum listings
+holiday_df = calendar_df.groupby('uk_holidays_name').listing_id.count()
+holiday_df = holiday_df.reset_index()
+holiday_df = holiday_df .sort_values('listing_id',ascending=[0])
+holiday_df
+plt.figure(figsize=(15,7))
+ax = sns.barplot("uk_holidays_name", y="listing_id", data=holiday_df,palette="Blues_d")
+ax.set(xlabel='UK Holidays Name', ylabel='Total Number of Listings')
 
-holidayDF=calendarDF.groupby('us_holidays_name').listing_id.count()
-holidayDF=holidayDF.reset_index()
-holidayDF=holidayDF.sort_values('listing_id',ascending=[0])
-holidayDF
-
-# visualizing the same
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(19,8))
-ax = sns.barplot("us_holidays_name", y="listing_id", data=holidayDF,palette="Blues_d")
-ax.set(xlabel='US Holidays Name', ylabel='Total Number of Listings')
-
-holidayPriceDF=calendarDF.groupby('us_holidays_name').price.mean()
-holidayPriceDF=holidayPriceDF.reset_index()
-holidayPriceDF=holidayPriceDF.sort_values('price',ascending=[0])
-
-holidayPriceDF.head(10)
-
-
-
-# visualizing the same
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(19,8))
-ax = sns.barplot("us_holidays_name", y="price", data=holidayPriceDF,palette="Blues_d")
+#checking which holiday has maximum prices
+holidayPrice_df = calendar_df.groupby('uk_holidays_name').price.mean()
+holidayPrice_df = holidayPrice_df.reset_index()
+holidayPrice_df = holidayPrice_df.sort_values('price',ascending=[0])
+holidayPrice_df.head(10)
+plt.figure(figsize=(15,8))
+ax = sns.barplot("uk_holidays_name", y="price", data=holidayPrice_df,palette="Blues_d")
 ax.set(xlabel='US Holidays Name', ylabel='Average Price')
 
-
-
-merger=pd.merge(holidayDF,holidayPriceDF,on='us_holidays_name')
-merger=merger.rename(columns={'listing_id':'number_Of_Listings'})
-merger=merger.rename(columns={'price':'average_Price'})
+# merge holiday listings and holiday price
+merger = pd.merge(holiday_df,holidayPrice_df,on='uk_holidays_name')
+merger = merger.rename(columns={'listing_id':'number_Of_Listings'})
+merger = merger.rename(columns={'price':'average_Price'})
 merger
 
-#analyzing data of september and october
-
-checkHolidaysDF=calendarDF[(calendarDF['Year'] == '2016') & ((calendarDF['Month'] == '09') |(calendarDF['Month'] == '10'))]
-checkHolidaysDF=checkHolidaysDF.groupby(['Year','Month','holiday']).price.mean()
-checkHolidaysDF=checkHolidaysDF.reset_index()
-checkHolidaysDF.head()
-
-#analyzing longweekednd holiday days
-
-columbusDF=calendarDF[(calendarDF['Year'] == '2016') & (calendarDF['Month'] == '10' ) & ((calendarDF['Day'] == '08') | (calendarDF['Day'] == '09') | (calendarDF['Day'] == '10'))]
-columbusDF.groupby('Month').price.mean()
-
-
-#analyzing rest of the days
-
-NocolumbusDF=calendarDF[(calendarDF['Year'] == '2016') & (calendarDF['Month'] == '10' ) & ((calendarDF['Day'] != '08') | (calendarDF['Day'] != '09') | (calendarDF['Day'] != '10'))]
-NocolumbusDF.groupby('Month').price.mean()
+#analyzing data of July and August
+checkHolidays_df = calendar_df[(calendar_df['Year'] == '2019') & ((calendar_df['Month'] == '07') |(calendar_df['Month'] == '08'))]
+checkHolidays_df = checkHolidays_df.groupby(['Year','Month','holiday']).price.mean()
+checkHolidays_df = checkHolidays_df.reset_index()
+checkHolidays_df.head()
 
 # analyzing data from date 5th of October to date 13th of October which includes both long weekend and normal workdays
+July_df = calendar_df[(calendar_df['Year'] == '2019') & (calendar_df['Month'] == '07')]
+July_df = July_df.groupby('Day').price.mean()
+July_df = July_df.reset_index()
+July_df = July_df.sort_values('Day',ascending=[1])
+July_df = July_df.rename(columns={'price':'Average_Price'})
+July_df['date'] = July_df['Day'].apply(lambda x:datetime.date(2019,7,int(x)))
+July_df['day_Name'] = July_df['date'].apply(lambda x:calendar.day_name[x.weekday()])
+July_df.head(10)
 
-octDF=calendarDF[(calendarDF['Year'] == '2016') & (calendarDF['Month'] == '10' )& ((calendarDF['Day'] == '05' )| (calendarDF['Day'] == '06' )| (calendarDF['Day'] == '07' )| (calendarDF['Day'] == '08' )| (calendarDF['Day'] == '09' )| (calendarDF['Day'] == '10' )| (calendarDF['Day'] == '10' )| (calendarDF['Day'] == '11' )| (calendarDF['Day'] == '12' )| (calendarDF['Day'] == '13' ))]
-octDF=octDF.groupby('Day').price.mean()
-octDF=octDF.reset_index()
-octDF=octDF.sort_values('Day',ascending=[1])
-octDF=octDF.rename(columns={'price':'Average_Price'})
-octDF.head(10)
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-x=octDF['Day'].tolist()
-y=octDF['Average_Price'].tolist()
-
+x=July_df['Day'].tolist()
+y=July_df['Average_Price'].tolist()
+plt.figure(figsize=(15,8))
 plt.plot(x,y, 'ro-')
 plt.ylabel('Average Price')
 plt.xlabel('Days')
 plt.show()
 
-############################################################
-# Analys=ze 4: Where to Invest a Property in BOSTON to get maximum returns from Airbnb?
-############################################################
-import numpy as np
-import pandas as pd
-import seaborn as sns
 
-reviewsDF = pd.read_csv("D:\\MyProjects\\01_Airbnb\\Boston_reviews.csv")
-reviewsDF = reviewsDF.dropna()
-reviewsDF.head()
+############################################################
+# P7: NLP Analysis
+############################################################
 
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Sentiment Analysis: Where to Invest a Property in BOSTON to get maximum returns from Airbnb?
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #assigning polarity score to each comment and adding the same to dataframe
-
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import nltk
-nltk.download('vader_lexicon')
-  
 sid = SentimentIntensityAnalyzer()
-
-reviewsDF['polarity_value']="Default"
-reviewsDF['neg']=0.0
-reviewsDF['pos']=0.0
-reviewsDF['neu']=0.0
-reviewsDF['compound']=0.0
-for index,row in reviewsDF.iterrows():
+review_df['polarity_value']="Default"
+review_df['neg']=0.0
+review_df['pos']=0.0
+review_df['neu']=0.0
+review_df['compound']=0.0
+for index,row in review_df.iterrows():
     ss = sid.polarity_scores(row['comments'])
-    reviewsDF.set_value(index,'polarity_value',ss)
-    reviewsDF.set_value(index,'neg',ss['neg'])
-    reviewsDF.set_value(index,'pos',ss['pos'])
-    reviewsDF.set_value(index,'neu',ss['neu'])
-    reviewsDF.set_value(index,'compound',ss['compound'])
-reviewsDF.head()
-reviewsDF.to_csv('pority_Values_reviews.csv')
+    review_df.set_value(index,'polarity_value',ss)
+    review_df.set_value(index,'neg',ss['neg'])
+    review_df.set_value(index,'pos',ss['pos'])
+    review_df.set_value(index,'neu',ss['neu'])
+    review_df.set_value(index,'compound',ss['compound'])
+review_df.head()
+review_df.to_csv('D:\\MyProjects\\01_Airbnb\\London_pority_Values_reviews.csv')
 
 # Our dataframe consists of reviews in different language as well.Hence removing the comments which are not in english
-from langdetect import detect
+
 
 def detect_lang(sente):
     sente=str(sente)
@@ -642,100 +582,66 @@ plt.show()
 
 
 ############################################################
-# Analysize 5: HOST ANALYSIS & RECOMMENDATION SYSTEM FOR PRICES
+# P11: PREDICTIVE MODELS
 ############################################################
-# Cleaning the data
-
-import pandas as pd
-import numpy as np
-from collections import Counter
-
-inputDF = pd.read_csv('D:\\MyProjects\\01_Airbnb\\Boston_listings.csv')
-inputDF=inputDF[['id','instant_bookable','room_type','host_since','accommodates','bathrooms','bedrooms','beds','amenities','cancellation_policy','review_scores_rating','price']]
-
-# replacing NaN values with 0
-inputDF.fillna(0, inplace=True)
-
-#Extracting prices from the table
-price = inputDF['price']
-prices=[]
-
-#clean the data to make it float
-for p in price:
-    p=float(p[1:].replace(',',''))
-    prices.append(p)
-
-#replace the price column with the new column
-inputDF['price']=prices
-
 #exclude the listings with 0 for price,beds,bedrooms,accomodates etc
-inputDF = inputDF[inputDF.bathrooms >0]
-inputDF = inputDF[inputDF.bedrooms > 0]
-inputDF = inputDF[inputDF.beds > 0]
-inputDF = inputDF[inputDF.price  > 0]
-inputDF = inputDF[inputDF.review_scores_rating  > 0]
-inputDF = inputDF[inputDF.accommodates  > 0]
+listing_df = listing_df[listing_df.bathrooms >0]
+listing_df = listing_df[listing_df.bedrooms > 0]
+listing_df = listing_df[listing_df.beds > 0]
+listing_df = listing_df[listing_df.price  > 0]
+listing_df = listing_df[listing_df.review_scores_rating  > 0]
+listing_df = listing_df[listing_df.accommodates  > 0]
+listing_df.shape
 
-for i,r in inputDF.iterrows():
-    inputDF.set_value(i,'year',r['host_since'][:4])
-    inputDF.set_value(i,'month',r['host_since'][5:7])
-    inputDF.set_value(i,'day',r['host_since'][8:])
-inputDF.head()
-
+for i,r in listing_df.iterrows():
+    listing_df.set_value(i,'year',r['host_since'][:4])
+    listing_df.set_value(i,'month',r['host_since'][5:7])
+    listing_df.set_value(i,'day',r['host_since'][8:])
+listing_df.head(1)
 
 # this graph shows count of host registered everyday by resampling the data for each day
-
-import seaborn as sns
-import matplotlib
-import matplotlib.pyplot as plt
 plt.figure(figsize=(18,10))
-join_dates = pd.to_datetime(inputDF['host_since']).value_counts().resample('D').mean().fillna(0)
+join_dates = pd.to_datetime(listing_df['host_since']).value_counts().resample('D').mean().fillna(0)
 join_dates.plot()
 plt.xlabel('year')
 plt.ylabel('number of hosts')
 
 plt.figure(figsize=(16,10))
-yearDF=inputDF.groupby(['year']).id.count()
-yearDF=yearDF.reset_index()
-yearDF=yearDF.rename(columns={'id':'Number of hosts'})
-ax = sns.barplot(x='year', y="Number of hosts", data=yearDF,palette="Blues_d")
+year_df = listing_df.groupby(['year']).id.count()
+year_df = year_df.reset_index()
+year_df = year_df.rename(columns={'id':'Number of hosts'})
+ax = sns.barplot(x='year', y="Number of hosts", data=year_df,palette="Blues_d")
 plt.ylabel('Number of hosts')
 
 #plotting for all months for each year
-import seaborn as sns
-
-yearMonth=inputDF.groupby(['year','month']).id.count()
+yearMonth=listing_df.groupby(['year','month']).id.count()
 yearMonth=yearMonth.reset_index()
 yearMonth=yearMonth.sort_values(['year','month'],ascending=[1,1])
 yearMonth=yearMonth.rename(columns={"id":"Number of hosts"})
 sns.factorplot(data=yearMonth, x="month", y="Number of hosts",col="year",col_wrap=3)
 
 plt.figure(figsize=(10,8))
-pd.to_datetime(inputDF['host_since']).dt.dayofweek.value_counts().sort_index().plot(kind='bar')
+pd.to_datetime(listing_df['host_since']).dt.dayofweek.value_counts().sort_index().plot(kind='bar')
 plt.xlabel("Days")
 plt.ylabel("Number of hosts")
 
 #this will create 4 columns namely flexible, moderate, strict, super_strict_30 which are its categories
-
-cancel_policy = pd.get_dummies(inputDF.cancellation_policy).astype(int)
+cancel_policy = pd.get_dummies(listing_df.cancellation_policy).astype(int)
 cancel_policy.head()
 
 # Similiarly converting remaining categorial column,instant_booking  into indiactor variables
-
-instant_booking = pd.get_dummies(inputDF.instant_bookable, prefix = 'instant_booking').astype(int)
+instant_booking = pd.get_dummies(listing_df.instant_bookable, prefix = 'instant_booking').astype(int)
 instant_booking.head()
 
-room_type = pd.get_dummies(inputDF.room_type).astype(int)
+room_type = pd.get_dummies(listing_df.room_type).astype(int)
 room_type.head()
 
 # drop original columns and replace them with indicator columns
-
-inputDF = inputDF.drop(['cancellation_policy', 'instant_bookable', 'room_type'], axis = 1)
-inputDF = pd.concat((inputDF, cancel_policy, instant_booking, room_type), axis = 1)
-
-inputDF.head()
-
-
+listing_df1 = listing_df[['bathrooms','bedrooms','beds','price','number_of_reviews','accommodates','review_scores_rating']]
+listing_df1 = pd.concat((listing_df1, cancel_policy, instant_booking, room_type), axis = 1)
+listing_df1.head()
+listing_df1.shape
+listing_df1.columns
 
 # splitting the amenities list to count the number of amenities
 '''
@@ -749,32 +655,14 @@ for element in inputDF.amenities:
 
 inputDF.amenities = amenities_list
 '''
-inputDF.head()
-
-import sklearn.metrics as metrics
-from sklearn.grid_search import GridSearchCV
-from sklearn.grid_search import RandomizedSearchCV
-from sklearn import metrics
-from sklearn import datasets
-from sklearn import cross_validation
-from sklearn import linear_model
-from sklearn import ensemble
-
-split_data= inputDF.drop(['price'],axis=1)
-train1,test1,train2,test2=cross_validation.train_test_split(split_data,inputDF.price, test_size=0.4,train_size = 0.6,random_state=13)
+split_data= listing_df1.drop(['price'],axis=1)
+train1,test1,train2,test2=cross_validation.train_test_split(split_data,listing_df1.price, test_size=0.4,train_size = 0.6,random_state=13)
 
 # Lets analyze if linear regression can predict the prices accurately
 # mean of prices
-mean = np.mean(inputDF.price)
-
+mean = np.mean(listing_df1.price)
 # standard deviation to compare 
-std = np.std(inputDF.price)
-
-print("mean: " + str(mean))
-print ("standard deviation: " + str(std))
-
-
-
+std = np.std(listing_df1.price)
 # linear regression testing
 linear_reg = linear_model.LinearRegression()
 linear_reg.fit(train1, train2)
