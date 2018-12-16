@@ -38,6 +38,9 @@ from sklearn import cross_validation
 from sklearn import linear_model
 from sklearn import ensemble
 
+# statistics
+import scipy.stats
+
 # Configuration
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 100)
@@ -74,6 +77,74 @@ review_df.shape
 review_df.head()
 review_df.describe()
 review_df.apply(lambda x:len(x.unique()))
+
+
+
+
+
+################################################################################
+# Data preprocessing: cleaning and transfoming data
+################################################################################
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Listing
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# missing data:
+    # (1) show number of rows having missing data for each feature
+    # (2) replacing NaN values with 0
+listing_df.apply(lambda x:sum(x.isnull()))
+listing_df.fillna(0, inplace=True)
+
+# text to number: 
+    # (1) replace ', ' to '' 
+    # (2) remove character '$' in price
+# , # (3) convert string to float
+listing_df['price'] = listing_df['price'].apply(lambda x:float(x[1:].replace(',','')))
+
+# exclude the listings with 0 for price,beds,bedrooms,accomodates etc
+listing_df = listing_df[listing_df.price  > 0]
+listing_df.shape
+
+review_df = review_df.dropna()
+review_df.shape
+
+
+
+############################################################
+# EXAMINE VARIABLE
+############################################################
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+target
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+#histogram and normal probability plot
+sns.distplot(listing_df['price'])
+fig = plt.figure()
+res = stats.probplot(listing_df['price'], plot=plt)
+#skewness and kurtosis
+print("Skewness: %f" % listing_df['price'].skew())
+print("Kurtosis: %f" % listing_df['price'].kurt())
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+check out missing data
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+total = listing_df.isnull().sum().sort_values(ascending=False)
+percent = (listing_df.isnull().sum()/listing_df.isnull().count()).sort_values(ascending=False)
+missing_data = pd.concat([total, percent], axis=1, keys=['Total', 'Percent'])
+missing_data.head(20)
+
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Correlation
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+#correlation matrix
+corrmat = listing_df.corr(method = 'spearman')
+f, ax = plt.subplots(figsize=(12, 9))
+sns.heatmap(corrmat, vmax=.8, square=True);
+
+
+
 
 
 ############################################################

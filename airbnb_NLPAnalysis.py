@@ -81,6 +81,41 @@ review_df.apply(lambda x:len(x.unique()))
 # P7: NLP Analysis
 ############################################################
 
+
+# Let's look at the differences between the words used in listings for Airbnb locations in different Boston neighborhoods
+uniqueNeighborhoods = listing_df.neighbourhood_cleansed.unique().tolist()
+#function to clean the data and compile a list of most common words
+def cleanData(neighbrhood_name,descrip):
+    p = re.sub('[^a-zA-Z]+',' ', descrip)
+    cmn_words=['The','I','Boston','room']
+    descrip_data=nltk.word_tokenize(p)
+    filtered_data=[word.lower() for word in descrip_data if word not in cmn_words if word not in stopwords.words('english')] 
+    wnl = nltk.WordNetLemmatizer() 
+    counts=Counter([wnl.lemmatize(data) for data in filtered_data])
+    commn_words=[]
+    for w in counts.most_common(5):
+        commn_words.append(w[0])
+    return ' '.join(commn_words)
+summ={}
+for n in uniqueNeighborhoods:
+    text=''
+    for index,row in listing_df.iterrows():
+        if row['neighbourhood_cleansed']==n:
+            if ((row['description']!=0) & (row['space']!=0) & (row['neighborhood_overview']!=0)):
+                text =text+row['description']+row['space']+row['neighborhood_overview']
+    summ[n]=text
+final_df_neighbrhood=pd.DataFrame(columns=['neighborhood','top 5 words in description'])
+for a in summ.items():
+    top5words=cleanData(a[0],a[1])
+    final_df_neighbrhood=final_df_neighbrhood.append(pd.Series([a[0],top5words],index=['neighborhood','top 5 words in description']),ignore_index=True)
+
+final_df_neighbrhood = pd.read_csv('top_words_description.csv')
+final_df_neighbrhood.head()
+
+
+
+
+
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 Sentiment Analysis: Where to Invest a Property in BOSTON to get maximum returns from Airbnb?
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''

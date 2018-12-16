@@ -117,47 +117,7 @@ calendar_df.head()
 ################################################################################
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Analyzing and plotting the number of listings based on their room type
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-# Categorizing differernt listings based on room_type
-roomtype = pd.DataFrame(listing_df.groupby('room_type').id.count().sort_values())
-roomtype.columns = ['room_type']
-roomtype.plot.pie(y = 'room_type', 
-                 colormap = 'Blues_r', 
-                 figsize=(10,10), 
-                 fontsize = 20, autopct = '%.2f',
-                 legend = False,
-                 title = 'Room Type Distribution')
-
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Analyzing and plotting the number of listings based on their property type
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-# Categorizing differernt listings based on property_type
-propertytype = pd.DataFrame(listing_df.groupby('property_type').id.count())
-propertytype.columns = ['Number_Of_Listings']
-propertytype['property_type'] = propertytype.index.values
-propertytype.plot(kind='bar', 
-           x='property_type',
-           y='Number_Of_Listings',
-           color = '#66c2ff', 
-           figsize =(15,8), 
-           title = 'London Property Type Frequency', 
-           legend = False)
-plt.ylabel('property type')
-plt.ylabel('Number of listings')
-
-#Plotting the same on a heatMap
-plt.figure(figsize=(12,12))
-sns.heatmap(listing_df.groupby([
-        'property_type', 'room_type']).price.mean().unstack(),annot=True, fmt=".0f")
-
-# HeatMap for variation of prices with number of bedrooms for listings
-plt.figure(figsize=(12,12))
-sns.heatmap(listing_df.groupby([
-        'neighbourhood_cleansed', 'bedrooms']).price.mean().unstack(),annot=True, fmt=".0f")
-
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Analyzing and plotting word cloud for summary
+summary: Analyzing and plotting word cloud for summary
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 summary_df = listing_df[['summary','price']]
 summary_df = summary_df[pd.notnull(summary_df['summary'])]
@@ -183,8 +143,478 @@ plt.imshow(wordcloud)
 plt.axis("off")
 plt.show()
 
-#Analyzing what amenities costs more ? top price
-amenities_df = listing_df[['amenities','price','id',]]
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+longitude + latitude
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+longlat_df = listing_df[['description','longitude','latitude']]
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+space
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+space_df = listing_df[['space','price']]
+space_df.head(20)
+
+space_df = space_df[pd.notnull(space_df['space'])]
+space_df = space_df[space_df['space']!=0]
+space_df = space_df.sort_values('price',ascending=[0])
+top100_df = space_df.head(100)
+words=''
+for index,row in top100_df.iterrows():
+    words += row['space']
+string_punctuation = string.punctuation
+ignoreChar=['\r','\n','',' ',"'s"]
+nums=['0','1','2','3','4','5','6','7','8','9']
+space_data=nltk.word_tokenize(words)
+words_only = [l.lower() for l in space_data if l not in string_punctuation if l not in ignoreChar if l not in nums]
+filtered_data=[word for word in words_only if word not in stopwords.words('english')] 
+wnl = nltk.WordNetLemmatizer() 
+final_data=[wnl.lemmatize(data) for data in filtered_data]
+final_words=' '.join(final_data)
+final_words[:50]
+wordcloud = WordCloud(width = 1000, height = 700).generate(final_words)
+plt.figure(figsize=(18,12))
+plt.imshow(wordcloud)
+plt.axis("off")
+plt.show()
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+description: Analyzing and plotting word cloud for description
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+description_df = listing_df[['description','price']]
+description_df = description_df[pd.notnull(description_df['description'])]
+description_df = description_df[description_df['description']!=0]
+description_df = description_df.sort_values('price',ascending=[0])
+top100_df = description_df.head(100)
+words=''
+for index,row in top100_df.iterrows():
+    words += row['description']
+string_punctuation = string.punctuation
+ignoreChar=['\r','\n','',' ',"'s"]
+nums=['0','1','2','3','4','5','6','7','8','9']
+description_data=nltk.word_tokenize(words)
+words_only = [l.lower() for l in description_data if l not in string_punctuation if l not in ignoreChar if l not in nums]
+filtered_data=[word for word in words_only if word not in stopwords.words('english')] 
+wnl = nltk.WordNetLemmatizer() 
+final_data=[wnl.lemmatize(data) for data in filtered_data]
+final_words=' '.join(final_data)
+final_words[:50]
+wordcloud = WordCloud(width = 1000, height = 700).generate(final_words)
+plt.figure(figsize=(18,12))
+plt.imshow(wordcloud)
+plt.axis("off")
+plt.show()
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+instant_bookable
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+instant_bookable_df = listing_df[['instant_bookable','price']]
+instant_bookable_df.head(20)
+listing_df['instant_bookable'].unique()
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+neighborhood_overview
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+neighborhood_overview_df = listing_df[['neighborhood_overview','price']]
+neighborhood_overview_df.head(20)
+
+neighborhood_overview_df = neighborhood_overview_df[pd.notnull(neighborhood_overview_df['neighborhood_overview'])]
+neighborhood_overview_df = neighborhood_overview_df[neighborhood_overview_df['neighborhood_overview_df']!=0]
+neighborhood_overview_df = neighborhood_overview_df.sort_values('price',ascending=[0])
+top100_df = neighborhood_overview_df.head(100)
+words=''
+for index,row in top100_df.iterrows():
+    words += row['neighborhood_overview']
+string_punctuation = string.punctuation
+ignoreChar=['\r','\n','',' ',"'s"]
+nums=['0','1','2','3','4','5','6','7','8','9']
+neighborhood_overview_data=nltk.word_tokenize(words)
+words_only = [l.lower() for l in neighborhood_overview_data if l not in string_punctuation if l not in ignoreChar if l not in nums]
+filtered_data=[word for word in words_only if word not in stopwords.words('english')] 
+wnl = nltk.WordNetLemmatizer() 
+final_data=[wnl.lemmatize(data) for data in filtered_data]
+final_words=' '.join(final_data)
+final_words[:50]
+wordcloud = WordCloud(width = 1000, height = 700).generate(final_words)
+plt.figure(figsize=(18,12))
+plt.imshow(wordcloud)
+plt.axis("off")
+plt.show()
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+neighbourhood_cleansed
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# grouping neighbourhood by number of listings
+neighbourhood_df = listing_df.groupby('neighbourhood_cleansed').id.count()
+neighbourhood_df = neighbourhood_df.reset_index()
+neighbourhood_df = neighbourhood_df.rename(columns={'id':'Number_Of_Listings'})
+neighbourhood_df = neighbourhood_df.sort_values('Number_Of_Listings',ascending=[0])
+neighbourhood_df.head()
+neighbourhood_df.plot(kind='bar', 
+           x='neighbourhood_cleansed',
+           y='Number_Of_Listings',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London neighbourhood Type Frequency', 
+           legend = False)
+plt.xlabel('neighbourhood type')
+plt.ylabel('Number of listings')
+
+
+# grouping neighbourhood by average price of listings
+neighbourhoodPrice_df = listing_df.groupby('neighbourhood_cleansed').price.mean()
+neighbourhoodPrice_df = neighbourhoodPrice_df.reset_index()
+neighbourhoodPrice_df = neighbourhoodPrice_df.rename(columns={'price':'Average_Price'})
+neighbourhoodPrice_df = neighbourhoodPrice_df.sort_values('Average_Price',ascending=[0])
+neighbourhoodPrice_df.head()
+#Merging above two dataframes
+merge_df =pd.merge(neighbourhood_df,neighbourhoodPrice_df,on='neighbourhood_cleansed')
+merge_df.head()
+
+# Now lets visualize average price of these listings on the basis of neighbourhood where room type is entire apartment
+objects = neighbourhoodPrice_df['neighbourhood_cleansed']
+y_pos = neighbourhoodPrice_df['Average_Price']
+neighbourhoodPrice_df.plot(kind='bar', 
+           x='neighbourhood_cleansed',
+           y='Average_Price',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London Neighborhood Average price', 
+           legend = False)
+plt.xlabel('neighbourhood type')
+plt.ylabel('Average Price')
+
+
+
+# Let's look at the differences between the words used in listings for Airbnb locations in different Boston neighborhoods
+uniqueNeighborhoods = listing_df.neighbourhood_cleansed.unique().tolist()
+#function to clean the data and compile a list of most common words
+def cleanData(neighbrhood_name,descrip):
+    p = re.sub('[^a-zA-Z]+',' ', descrip)
+    cmn_words=['The','I','Boston','room']
+    descrip_data=nltk.word_tokenize(p)
+    filtered_data=[word.lower() for word in descrip_data if word not in cmn_words if word not in stopwords.words('english')] 
+    wnl = nltk.WordNetLemmatizer() 
+    counts=Counter([wnl.lemmatize(data) for data in filtered_data])
+    commn_words=[]
+    for w in counts.most_common(5):
+        commn_words.append(w[0])
+    return ' '.join(commn_words)
+summ={}
+for n in uniqueNeighborhoods:
+    text=''
+    for index,row in listing_df.iterrows():
+        if row['neighbourhood_cleansed']==n:
+            if ((row['description']!=0) & (row['space']!=0) & (row['neighborhood_overview']!=0)):
+                text =text+row['description']+row['space']+row['neighborhood_overview']
+    summ[n]=text
+final_df_neighbrhood=pd.DataFrame(columns=['neighborhood','top 5 words in description'])
+for a in summ.items():
+    top5words=cleanData(a[0],a[1])
+    final_df_neighbrhood=final_df_neighbrhood.append(pd.Series([a[0],top5words],index=['neighborhood','top 5 words in description']),ignore_index=True)
+
+final_df_neighbrhood = pd.read_csv('top_words_description.csv')
+final_df_neighbrhood.head()
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+host_id + host_name
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+hostname_df = listing_df[['host_id','host_name','price']]
+hostname_df.head(20)
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+host_since
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+host_since_df = listing_df[['host_since','price']]
+host_since_df.head(20)
+
+listing_df = listing_df[listing_df.host_since  != 0]
+listing_df.shape
+listing_df['year'] = 0
+listing_df['month'] = 0
+listing_df['day'] = 0
+
+for i,r in listing_df.iterrows():
+    listing_df.set_value(i,'year',r['host_since'][:4])
+    listing_df.set_value(i,'month',r['host_since'][5:7])
+    listing_df.set_value(i,'day',r['host_since'][8:])
+listing_df.head(1)
+listing_df['host_since'][0:10]
+
+# this graph shows count of host registered everyday by resampling the data for each day
+plt.figure(figsize=(18,10))
+join_dates = pd.to_datetime(listing_df['host_since']).value_counts().resample('D').mean().fillna(0)
+join_dates.plot()
+plt.xlabel('year')
+plt.ylabel('number of hosts')
+
+plt.figure(figsize=(16,10))
+year_df = listing_df.groupby(['year']).id.count()
+year_df = year_df.reset_index()
+year_df = year_df.rename(columns={'id':'Number of hosts'})
+ax = sns.barplot(x='year', y="Number of hosts", data=year_df,palette="Blues_d")
+plt.ylabel('Number of hosts')
+
+#plotting for all months for each year
+yearMonth=listing_df.groupby(['year','month']).id.count()
+yearMonth=yearMonth.reset_index()
+yearMonth=yearMonth.sort_values(['year','month'],ascending=[1,1])
+yearMonth=yearMonth.rename(columns={"id":"Number of hosts"})
+sns.factorplot(data=yearMonth, x="month", y="Number of hosts",col="year",col_wrap=3)
+
+plt.figure(figsize=(10,8))
+pd.to_datetime(listing_df['host_since']).dt.dayofweek.value_counts().sort_index().plot(kind='bar')
+plt.xlabel("Days")
+plt.ylabel("Number of hosts")
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+host_response_time
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+host_response_time_df = listing_df[['host_response_time','price']]
+host_response_time_df.head(20)
+
+
+host_response_time = pd.DataFrame(listing_df.groupby('host_response_time').id.count().sort_values())
+host_response_time.columns = ['NumOfListings']
+host_response_time.plot.pie(y = 'NumOfListings',
+                 colormap = 'Blues_r', 
+                 figsize=(10,10), 
+                 fontsize = 20, autopct = '%.2f',
+                 legend = False,
+                 title = 'host_response_time Distribution')
+
+# Average prices for each type of listing
+host_response_time_df = listing_df.groupby('host_response_time').price.mean()
+host_response_time_df = host_response_time_df.reset_index()
+host_response_time_df = host_response_time_df.rename(columns={'price':'average_Price'})
+host_response_time_df
+
+# Now lets visualize average price of these listings on the basis of neighbourhood where room type is entire apartment
+objects = host_response_time_df['host_response_time']
+y_pos = host_response_time_df['average_Price']
+host_response_time_df.plot(kind='bar', 
+           x='host_response_time',
+           y='average_Price',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London host_response_time Average price', 
+           legend = False)
+plt.xlabel('host_response_time')
+plt.ylabel('Average Price')
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+street
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+street_df = listing_df[['street','price']]
+street_df.head(20)
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+zipcode
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+zipcode_df = listing_df[['zipcode','price']]
+zipcode_df.head(20)
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+review_scores_rating
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+review_scores_rating_df = listing_df[['review_scores_rating','price']]
+review_scores_rating_df.head(20)
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+property_type: Categorizing differernt listings based on property_type
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+propertytype = pd.DataFrame(listing_df.groupby('property_type').id.count())
+propertytype.columns = ['Number_Of_Listings']
+propertytype = propertytype.reset_index()
+propertytype.plot(kind='bar', 
+           x='property_type',
+           y='Number_Of_Listings',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London Property Type Frequency', 
+           legend = False)
+plt.xlabel('property type')
+plt.ylabel('Number of listings')
+
+# Average prices for each type of listing
+propertytype_df = listing_df.groupby('property_type').price.mean()
+propertytype_df = propertytype_df.reset_index()
+propertytype_df = propertytype_df.rename(columns={'price':'average_Price'})
+propertytype_df = propertytype_df.sort_values('average_Price',ascending=[0])
+propertytype_df
+
+# Now lets visualize average price of these listings on the basis of neighbourhood where room type is entire apartment
+objects = propertytype_df['property_type']
+y_pos = host_response_time_df['average_Price']
+propertytype_df
+propertytype_df.plot(kind='bar', 
+           x='property_type',
+           y='average_Price',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London property_type Average price', 
+           legend = False)
+plt.xlabel('property_type')
+plt.ylabel('Average Price')
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+room_type: Categorizing differernt listings based on room_type
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+roomtype = pd.DataFrame(listing_df.groupby('room_type').id.count().sort_values())
+roomtype.columns = ['NumOfListings']
+roomtype.to_csv('D:\\MyProjects\\01_Airbnb\\common_info.csv')
+roomtype.plot.pie(y = 'NumOfListings',
+                 colormap = 'Blues_r', 
+                 figsize=(10,10), 
+                 fontsize = 20, autopct = '%.2f',
+                 legend = False,
+                 title = 'Room Type Distribution')
+
+# Average prices for each type of listing
+avgPrice_df = listing_df.groupby('room_type').price.mean()
+avgPrice_df = avgPrice_df.reset_index()
+avgPrice_df = avgPrice_df.rename(columns={'price':'average_Price'})
+avgPrice_df
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+accommodates: Categorizing differernt listings based on property_type
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+accommodates_df = listing_df[['accommodates','price']]
+accommodates_df.head(20)
+
+accommodates = pd.DataFrame(listing_df.groupby('accommodates').id.count())
+accommodates.columns = ['Number_Of_Listings']
+accommodates = accommodates.reset_index()
+accommodates = accommodates.sort_values('Number_Of_Listings',ascending=[0])
+accommodates.plot(kind='bar', 
+           x='accommodates',
+           y='Number_Of_Listings',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London Property Type Frequency', 
+           legend = False)
+plt.xlabel('accommodates')
+plt.ylabel('Number of listings')
+
+# Average prices for each type of listing
+accommodates_df = listing_df.groupby('accommodates').price.mean()
+accommodates_df = accommodates_df.reset_index()
+accommodates_df = accommodates_df.rename(columns={'price':'average_Price'})
+accommodates_df = accommodates_df.sort_values('average_Price',ascending=[0])
+accommodates_df
+
+# Now lets visualize average price of these listings on the basis of neighbourhood where room type is entire apartment
+objects = accommodates_df['accommodates']
+y_pos = accommodates_df['average_Price']
+accommodates_df
+accommodates_df.plot(kind='bar', 
+           x='accommodates',
+           y='average_Price',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London accommodates Average price', 
+           legend = False)
+plt.xlabel('accommodates')
+plt.ylabel('Average Price')
+
+
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+bathrooms: Categorizing differernt listings based on property_type
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+bathrooms_df = listing_df[['bathrooms','price']]
+bathrooms_df.head(20)
+
+bathrooms = pd.DataFrame(listing_df.groupby('bathrooms').id.count())
+bathrooms.columns = ['Number_Of_Listings']
+bathrooms = bathrooms.reset_index()
+bathrooms = bathrooms.sort_values('Number_Of_Listings',ascending=[0])
+bathrooms.plot(kind='bar', 
+           x='bathrooms',
+           y='Number_Of_Listings',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London Property Type Frequency', 
+           legend = False)
+plt.xlabel('bathrooms')
+plt.ylabel('Number of listings')
+
+# Average prices for each type of listing
+bathrooms_df = listing_df.groupby('bathrooms').price.mean()
+bathrooms_df = bathrooms_df.reset_index()
+bathrooms_df = bathrooms_df.rename(columns={'price':'average_Price'})
+bathrooms_df = bathrooms_df.sort_values('average_Price',ascending=[0])
+bathrooms_df
+
+# Now lets visualize average price of these listings on the basis of neighbourhood where room type is entire apartment
+objects = bathrooms_df['bathrooms']
+y_pos = bathrooms_df['average_Price']
+bathrooms_df
+bathrooms_df.plot(kind='bar', 
+           x='bathrooms',
+           y='average_Price',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London accommodates Average price', 
+           legend = False)
+plt.xlabel('bathrooms')
+plt.ylabel('Average Price')
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+bedrooms: Categorizing differernt listings based on property_type
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+bedrooms_df = listing_df[['bedrooms','price']]
+bedrooms_df.head(20)
+
+bedrooms = pd.DataFrame(listing_df.groupby('bedrooms').id.count())
+bedrooms.columns = ['Number_Of_Listings']
+bedrooms = bedrooms.reset_index()
+bedrooms = bedrooms.sort_values('Number_Of_Listings',ascending=[0])
+bedrooms.plot(kind='bar', 
+           x='bedrooms',
+           y='Number_Of_Listings',
+           color = '#66c2ff', 
+           figsize =(15,8), 
+           title = 'London Property Type Frequency', 
+           legend = False)
+plt.xlabel('bedrooms')
+plt.ylabel('Number of listings')
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+beds
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+reviews_per_month
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+reviews_per_month_df = listing_df[['reviews_per_month','price']]
+reviews_per_month_df.head(20)
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+amenities: 
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# Analyzing what amenities costs more ? top price
+amenities_df = listing_df[['amenities','price','id']]
 amenitiesDFTopper = amenities_df.sort_values('price',ascending=[0])
 amenitiesDFtop = amenitiesDFTopper.head(30)
 allemenities = ''
@@ -221,79 +651,112 @@ plt.axis("off")
 plt.show()
 
 
-################################################################################
-# P8: Investment/ Business opportunities
-################################################################################
-# Average prices for each type of listing
-avgPrice_df = listing_df.groupby('room_type').price.mean()
-avgPrice_df = avgPrice_df.reset_index()
-avgPrice_df = avgPrice_df.rename(columns={'price':'average_Price'})
-avgPrice_df
-home = listing_df[(listing_df.room_type == 'Entire home/apt')]
-private = listing_df[(listing_df.room_type == 'Private room')]
-shared = listing_df[(listing_df.room_type == 'Shared room')]
+# splitting the amenities list to count the number of amenities
+amenities_list = []
 
-# grouping neighbourhood by number of listings
-neighbourhood_df = listing_df.groupby('neighbourhood_cleansed').id.count()
-neighbourhood_df = neighbourhood_df.reset_index()
-neighbourhood_df = neighbourhood_df.rename(columns={'id':'Number_Of_Listings'})
-neighbourhood_df = neighbourhood_df.sort_values('Number_Of_Listings',ascending=[0])
-neighbourhood_df.head()
-# grouping neighbourhood by average price of listings
-neighbourhoodPrice_df = home.groupby('neighbourhood_cleansed').price.mean()
-neighbourhoodPrice_df = neighbourhoodPrice_df.reset_index()
-neighbourhoodPrice_df = neighbourhoodPrice_df.rename(columns={'price':'Average_Price'})
-neighbourhoodPrice_df = neighbourhoodPrice_df.sort_values('Average_Price',ascending=[0])
-neighbourhoodPrice_df.head()
-#Merging above two dataframes
-merge_df =pd.merge(neighbourhood_df,neighbourhoodPrice_df,on='neighbourhood_cleansed')
-merge_df.head()
+for element in listing_df.amenities:
+    element = element[1:]
+    element = element[:-1]
+    x = element.split()
+    amenities_list.append(len(x))
+
+listing_df['num_of_amenities'] = amenities_list
+
+amenities_df = listing_df[['num_of_amenities','price']]
+amenities_df.head(20)
+
+amenities = pd.DataFrame(listing_df.groupby('num_of_amenities').id.count())
+amenities.columns = ['Number_Of_Listings']
+amenities = amenities.reset_index()
+amenities = amenities.sort_values('Number_Of_Listings',ascending=[0])
+amenities = amenities.loc[amenities.Number_Of_Listings > 100,:]
+
+amenities.plot(kind='bar', 
+           x='num_of_amenities',
+           y='Number_Of_Listings',
+           color = '#66c2ff', 
+           figsize =(18,8), 
+           title = 'London Property Type Frequency', 
+           legend = False)
+plt.xlabel('amenities')
+plt.ylabel('Number of listings')
+
+# Average prices for each type of listing
+amenities_df = listing_df.groupby('num_of_amenities').price.mean()
+amenities_df = amenities_df.reset_index()
+amenities_df = amenities_df.rename(columns={'price':'average_Price'})
+amenities_df = amenities_df.sort_values('average_Price',ascending=[0])
+amenities_df
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+cancellation_policy
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+cancellation_policy_df = listing_df[['cancellation_policy','price']]
+cancellation_policy_df.head(20)
+listing_df['cancellation_policy'].unique()
+
+cancellation_policy = pd.DataFrame(listing_df.groupby('cancellation_policy').id.count().sort_values())
+cancellation_policy.columns = ['NumOfListings']
+cancellation_policy.plot.pie(y = 'NumOfListings',
+                 colormap = 'Blues_r', 
+                 figsize=(10,10), 
+                 fontsize = 20, autopct = '%.2f',
+                 legend = False,
+                 title = 'cancellation_policy Distribution')
+
+
+# Average prices for each type of listing
+cancellation_policy_df = listing_df.groupby('cancellation_policy').price.mean()
+cancellation_policy_df = cancellation_policy_df.reset_index()
+cancellation_policy_df = cancellation_policy_df.rename(columns={'price':'average_Price'})
+cancellation_policy_df = cancellation_policy_df.sort_values('average_Price',ascending=[0])
+cancellation_policy_df
 
 # Now lets visualize average price of these listings on the basis of neighbourhood where room type is entire apartment
-objects = neighbourhoodPrice_df['neighbourhood_cleansed']
-y_pos = neighbourhoodPrice_df['Average_Price']
-neighbourhoodPrice_df.plot(kind='bar', 
-           x='neighbourhood_cleansed',
-           y='Average_Price',
+objects = cancellation_policy_df['cancellation_policy']
+y_pos = cancellation_policy_df['average_Price']
+cancellation_policy_df
+cancellation_policy_df.plot(kind='bar', 
+           x='cancellation_policy',
+           y='average_Price',
            color = '#66c2ff', 
            figsize =(15,8), 
-           title = 'Boston Neighborhood Average price', 
+           title = 'London cancellation_policy Average price', 
            legend = False)
+plt.xlabel('cancellation_policy')
 plt.ylabel('Average Price')
 
-# Let's look at the differences between the words used in listings for Airbnb locations in different Boston neighborhoods
-uniqueNeighborhoods = listing_df.neighbourhood_cleansed.unique().tolist()
-#function to clean the data and compile a list of most common words
-def cleanData(neighbrhood_name,descrip):
-    p = re.sub('[^a-zA-Z]+',' ', descrip)
-    cmn_words=['The','I','Boston','room']
-    descrip_data=nltk.word_tokenize(p)
-    filtered_data=[word.lower() for word in descrip_data if word not in cmn_words if word not in stopwords.words('english')] 
-    wnl = nltk.WordNetLemmatizer() 
-    counts=Counter([wnl.lemmatize(data) for data in filtered_data])
-    commn_words=[]
-    for w in counts.most_common(5):
-        commn_words.append(w[0])
-    return ' '.join(commn_words)
-summ={}
-for n in uniqueNeighborhoods:
-    text=''
-    for index,row in listing_df.iterrows():
-        if row['neighbourhood_cleansed']==n:
-            if ((row['description']!=0) & (row['space']!=0) & (row['neighborhood_overview']!=0)):
-                text =text+row['description']+row['space']+row['neighborhood_overview']
-    summ[n]=text
-final_df_neighbrhood=pd.DataFrame(columns=['neighborhood','top 5 words in description'])
-for a in summ.items():
-    top5words=cleanData(a[0],a[1])
-    final_df_neighbrhood=final_df_neighbrhood.append(pd.Series([a[0],top5words],index=['neighborhood','top 5 words in description']),ignore_index=True)
-
-final_df_neighbrhood.to_csv('top_words_description.csv')
-final_df_neighbrhood.head()
 
 
 
 
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+number_of_reviews
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+number_of_reviews_df = listing_df[['number_of_reviews','price']]
+number_of_reviews_df.head(20)
+
+
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Price
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+#Plotting the same on a heatMap
+listing_df.groupby(['property_type', 'room_type']).price.mean().unstack()
+plt.figure(figsize=(12,12))
+sns.heatmap(listing_df.groupby(['property_type', 'room_type']).price.mean().unstack(),annot=True, fmt=".0f")
+
+# HeatMap for variation of prices with number of bedrooms for listings
+listing_df.groupby(['neighbourhood_cleansed', 'bedrooms']).price.mean().unstack()
+plt.figure(figsize=(12,12))
+sns.heatmap(listing_df.groupby(['neighbourhood_cleansed', 'bedrooms']).price.mean().unstack(),annot=True, fmt=".0f")
+
+#correlation matrix
+corrmat = listing_df.corr(method = 'spearman')
+f, ax = plt.subplots(figsize=(12, 9))
+sns.heatmap(corrmat, vmax=.8, square=True);
 
 
 
@@ -305,8 +768,15 @@ final_df_neighbrhood.head()
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 SEASONAL PATTERN OF PRICES
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+listing_df.loc[listing_df.id == 9554,'price']
+calendar_df.loc[calendar_df.listing_id == 9554,:]
+
 #Extracting prices from the table
 calendar_df['price'] = calendar_df['price'].apply(lambda x:float(x[1:].replace(',','')))
+
+calendar_df['price'] = calendar_df['price'].apply(lambda x:x[1:])
+
+calendar_df.shape
 
 #separating date column into day month and year
 calendar_df.head()
@@ -548,38 +1018,6 @@ listing_df = listing_df[listing_df.review_scores_rating  > 0]
 listing_df = listing_df[listing_df.accommodates  > 0]
 listing_df.shape
 
-for i,r in listing_df.iterrows():
-    listing_df.set_value(i,'year',r['host_since'][:4])
-    listing_df.set_value(i,'month',r['host_since'][5:7])
-    listing_df.set_value(i,'day',r['host_since'][8:])
-listing_df.head(1)
-
-# this graph shows count of host registered everyday by resampling the data for each day
-plt.figure(figsize=(18,10))
-join_dates = pd.to_datetime(listing_df['host_since']).value_counts().resample('D').mean().fillna(0)
-join_dates.plot()
-plt.xlabel('year')
-plt.ylabel('number of hosts')
-
-plt.figure(figsize=(16,10))
-year_df = listing_df.groupby(['year']).id.count()
-year_df = year_df.reset_index()
-year_df = year_df.rename(columns={'id':'Number of hosts'})
-ax = sns.barplot(x='year', y="Number of hosts", data=year_df,palette="Blues_d")
-plt.ylabel('Number of hosts')
-
-#plotting for all months for each year
-yearMonth=listing_df.groupby(['year','month']).id.count()
-yearMonth=yearMonth.reset_index()
-yearMonth=yearMonth.sort_values(['year','month'],ascending=[1,1])
-yearMonth=yearMonth.rename(columns={"id":"Number of hosts"})
-sns.factorplot(data=yearMonth, x="month", y="Number of hosts",col="year",col_wrap=3)
-
-plt.figure(figsize=(10,8))
-pd.to_datetime(listing_df['host_since']).dt.dayofweek.value_counts().sort_index().plot(kind='bar')
-plt.xlabel("Days")
-plt.ylabel("Number of hosts")
-
 #this will create 4 columns namely flexible, moderate, strict, super_strict_30 which are its categories
 cancel_policy = pd.get_dummies(listing_df.cancellation_policy).astype(int)
 cancel_policy.head()
@@ -598,18 +1036,6 @@ listing_df1.head()
 listing_df1.shape
 listing_df1.columns
 
-# splitting the amenities list to count the number of amenities
-'''
-amenities_list = []
-
-for element in inputDF.amenities:
-    element = element[1:]
-    element = element[:-1]
-    x = element.split()
-    amenities_list.append(len(x))
-
-inputDF.amenities = amenities_list
-'''
 split_data= listing_df1.drop(['price'],axis=1)
 train1,test1,train2,test2=cross_validation.train_test_split(split_data,listing_df1.price, test_size=0.4,train_size = 0.6,random_state=13)
 
@@ -623,10 +1049,6 @@ linear_reg = linear_model.LinearRegression()
 linear_reg.fit(train1, train2)
 linear_reg_error = metrics.median_absolute_error(test2, linear_reg.predict(test1))
 print ("Linear Regression: " + str(linear_reg_error))
-
-
-
-
 
 
 
