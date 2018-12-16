@@ -293,6 +293,11 @@ final_df_neighbrhood.head()
 
 
 
+
+
+
+
+
 ############################################################
 # PART 6: Time Series Analysis
 ############################################################
@@ -436,133 +441,86 @@ for index,row in review_df.iterrows():
     review_df.set_value(index,'compound',ss['compound'])
 review_df.head()
 review_df.to_csv('D:\\MyProjects\\01_Airbnb\\London_pority_Values_reviews.csv')
+review_df = pd.read_csv('D:\\MyProjects\\01_Airbnb\\London_pority_Values_reviews.csv')
 
 # Our dataframe consists of reviews in different language as well.Hence removing the comments which are not in english
-
-
 def detect_lang(sente):
     sente=str(sente)
     try:
         return detect(sente)
     except:
         return "None"
-
-for index,row in reviewsDF.iterrows():
+for index,row in review_df.iterrows():
     lang=detect_lang(row['comments'])
-    reviewsDF.set_value(index,'language',lang)
-    
+    review_df.set_value(index,'language',lang)    
 #taking rows whose language is English
-EngReviewsDF=reviewsDF[reviewsDF.language=='en']
-
-EngReviewsDF.head(2)
-
+EngReviews_df = review_df[review_df.language=='en']
+EngReviews_df = review_df
 
 # Lets visualize polarity score for positivity
-
-polarDF=EngReviewsDF[['pos']]
-polarDF=polarDF.groupby(pd.cut(polarDF["pos"], np.arange(0, 1.1, 0.1))).count()
-polarDF=polarDF.rename(columns={'pos':'count_of_Comments'})
-polarDF=polarDF.reset_index()
-polarDF=polarDF.rename(columns={'pos':'range_i'})
-for i,r in polarDF.iterrows():
-    polarDF.set_value(i,'RANGE',float(str(r['range_i'])[1:4].replace(',',''))) 
-    polarDF.set_value(i,'Sentiment','positive')
-del polarDF['range_i']
-polarDF.head()
-
+polar_df = EngReviews_df[['pos']]
+polar_df = polar_df.groupby(pd.cut(polar_df["pos"], np.arange(0, 1.1, 0.1))).count()
+polar_df = polar_df.rename(columns={'pos':'count_of_Comments'})
+polar_df = polar_df.reset_index()
+polar_df = polar_df.rename(columns={'pos':'range_i'})
+for i,r in polar_df.iterrows():
+    polar_df.set_value(i,'RANGE',float(str(r['range_i'])[1:4].replace(',',''))) 
+    polar_df.set_value(i,'Sentiment','positive')
+del polar_df['range_i']
+polar_df.head()
 
 # Lets visualize polarity score for negativity
-
-polarDFneg=EngReviewsDF[['neg']]
-polarDFneg=polarDFneg.groupby(pd.cut(polarDFneg["neg"], np.arange(0, 1.1, 0.1))).count()
-polarDFneg=polarDFneg.rename(columns={'neg':'count_of_Comments'})
-polarDFneg=polarDFneg.reset_index()
-polarDFneg=polarDFneg.rename(columns={'neg':'range_i'})
-for i,r in polarDFneg.iterrows():
-    polarDFneg.set_value(i,'RANGE',float(str(r['range_i'])[1:4].replace(',',''))) 
-    polarDFneg.set_value(i,'Sentiment','negative')
-del polarDFneg['range_i']
-for i,r in polarDFneg.iterrows():
-    polarDF=polarDF.append(pd.Series([r[0],r[1],r[2]],index=['count_of_Comments','RANGE','Sentiment']),ignore_index=True)
-    
-polarDFneg.head()
-
-
-
+negpolar_df = EngReviews_df[['neg']]
+negpolar_df = negpolar_df.groupby(pd.cut(negpolar_df["neg"], np.arange(0, 1.1, 0.1))).count()
+negpolar_df = negpolar_df.rename(columns={'neg':'count_of_Comments'})
+negpolar_df = negpolar_df.reset_index()
+negpolar_df = negpolar_df.rename(columns={'neg':'range_i'})
+for i,r in negpolar_df.iterrows():
+    negpolar_df.set_value(i,'RANGE',float(str(r['range_i'])[1:4].replace(',',''))) 
+    negpolar_df.set_value(i,'Sentiment','negative')
+del negpolar_df['range_i']
+for i,r in negpolar_df.iterrows():
+    polar_df = polar_df.append(pd.Series([r[0],r[1],r[2]],index=['count_of_Comments','RANGE','Sentiment']),ignore_index=True)    
+negpolar_df.head()
 
 # Lets visualize polarity score for neutrality
+neupolar_df = EngReviews_df[['neu']]
+neupolar_df = neupolar_df.groupby(pd.cut(neupolar_df["neu"], np.arange(0, 1.0, 0.1))).count()
+neupolar_df = neupolar_df.rename(columns={'neu':'count_of_Comments'})
+neupolar_df = neupolar_df.reset_index()
+neupolar_df = neupolar_df.rename(columns={'neu':'range_i'})
+for i,r in neupolar_df.iterrows():
+    neupolar_df.set_value(i,'RANGE',float(str(r['range_i'])[1:4].replace(',',''))) 
+    neupolar_df.set_value(i,'Sentiment','neutrl')
+del neupolar_df['range_i']
 
-polarDFnut=EngReviewsDF[['neu']]
-polarDFnut=polarDFnut.groupby(pd.cut(polarDFnut["neu"], np.arange(0, 1.0, 0.1))).count()
-polarDFnut=polarDFnut.rename(columns={'neu':'count_of_Comments'})
-polarDFnut=polarDFnut.reset_index()
-polarDFnut=polarDFnut.rename(columns={'neu':'range_i'})
-for i,r in polarDFnut.iterrows():
-    polarDFnut.set_value(i,'RANGE',float(str(r['range_i'])[1:4].replace(',',''))) 
-    polarDFnut.set_value(i,'Sentiment','neutrl')
-del polarDFnut['range_i']
+for i,r in neupolar_df.iterrows():
+    polar_df = polar_df.append(pd.Series([r[0],r[1],r[2]],index=['count_of_Comments','RANGE','Sentiment']),ignore_index=True)   
+neupolar_df.head()
 
-for i,r in polarDFnut.iterrows():
-    polarDF=polarDF.append(pd.Series([r[0],r[1],r[2]],index=['count_of_Comments','RANGE','Sentiment']),ignore_index=True)
-    
-polarDFnut.head()
-
-
-import seaborn as sns
-import matplotlib
-import matplotlib.pyplot as plt
-
+# Visualization 
 plt.figure(figsize=(10,10))
-sns.factorplot(data=polarDF, x="RANGE", y="count_of_Comments",col="Sentiment")
+sns.factorplot(data=polar_df, x="RANGE", y="count_of_Comments",col="Sentiment")
 
-
-
-inputDF = pd.read_csv('D:\\MyProjects\\01_Airbnb\\Boston_listings.csv')
-inputDF=inputDF[['number_of_reviews','price','review_scores_rating']]
-
-# replacing NaN values with 0
-inputDF.fillna(0, inplace=True)
-
-#Extracting prices from the table
-price = inputDF['price']
-prices=[]
-
-#clean the data to make it float
-for p in price:
-    p=float(p[1:].replace(',',''))
-    prices.append(p)
-
-#replace the price column with the new column
-inputDF['price']=prices
-
-price_review = inputDF[['number_of_reviews', 'price']].sort_values(by = 'price')
-
+listing_df2 = listing_df[['number_of_reviews','price','review_scores_rating']]
+price_review = listing_df2[['number_of_reviews', 'price']].sort_values(by = 'price')
 price_review.plot(x = 'price', 
                   y = 'number_of_reviews', 
                   style = 'o',
                   figsize =(12,8),
                   legend = False,
                   title = 'Reviews based on Price')
-
 plt.xlabel("price")
 plt.ylabel("Number of reviews")
 
-
-from nltk.corpus import stopwords
-import string
-import nltk
-
 words=''
-for index,row in EngReviewsDF.iterrows():
+for index,row in EngReviews_df.iterrows():
     words += row['comments']
 
 reviews_data=nltk.word_tokenize(words)
 string_punctuation = string.punctuation
 ignoreChar=['\r','\n','',' ',"'s",'!',',',]
 nums=['0','1','2','3','4','5','6','7','8','9']
-
-from nltk.corpus import stopwords
-
 cachedStopWords = stopwords.words("english")
 cachedStopWords.append('the')
 
@@ -570,9 +528,6 @@ words_only = [''.join(c for c in s if c not in string.punctuation if c not in nu
 words_only = [s for s in words_only if s]
 comments_filtered_data=' '.join(words_only)
 comments_filtered_data = ' '.join([word.lower() for word in comments_filtered_data.split() if word not in cachedStopWords])
-
-from wordcloud import WordCloud, STOPWORDS
-import matplotlib.pyplot as plt
 
 wordcloud = WordCloud(width = 1000, height = 700).generate(comments_filtered_data)
 plt.figure(figsize=(18,12))
