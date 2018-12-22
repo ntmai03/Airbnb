@@ -739,10 +739,33 @@ number_of_reviews_df.head(20)
 
 
 
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Price 
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# Price distribution
 
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Price
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+plt.figure(figsize=(10, 6))
+listing_df.price.plot.hist()
+plt.title('Price distribution - (All price)') 
+
+plt.figure(figsize=(10, 6))
+listing_df.price[listing_df.price< 1001].plot.hist()
+plt.title('Price distribution - ($0 - $1000)') 
+
+data = listing_df.price[listing_df.price< 201]
+binwidth = 10
+plt.figure(figsize=(10, 6))
+plt.hist(data,bins=range(min(data), max(data) + binwidth, binwidth))
+plt.title('Price distribution - ($0 - $200)') 
+plt.xticks(range(min(data), max(data) + binwidth, binwidth))
+
+data = listing_df.price[listing_df.price< 101]
+binwidth = 1
+plt.figure(figsize=(10, 6))
+plt.hist(data,bins=range(min(data), max(data) + binwidth, binwidth))
+plt.title('Price distribution - ($0 - $100)') 
+plt.xticks(range(min(data), max(data) + binwidth, binwidth))
+
 #Plotting the same on a heatMap
 listing_df.groupby(['property_type', 'room_type']).price.mean().unstack()
 plt.figure(figsize=(12,12))
@@ -757,7 +780,6 @@ sns.heatmap(listing_df.groupby(['neighbourhood_cleansed', 'bedrooms']).price.mea
 corrmat = listing_df.corr(method = 'spearman')
 f, ax = plt.subplots(figsize=(12, 9))
 sns.heatmap(corrmat, vmax=.8, square=True);
-
 
 
 
@@ -1029,12 +1051,21 @@ instant_booking.head()
 room_type = pd.get_dummies(listing_df.room_type).astype(int)
 room_type.head()
 
+property_type = pd.get_dummies(listing_df.property_type).astype(int)
+property_type.head()
+
+neibourhood_type = pd.get_dummies(listing_df.neighbourhood_cleansed).astype(int)
+neibourhood_type.head()
+
 # drop original columns and replace them with indicator columns
 listing_df1 = listing_df[['bathrooms','bedrooms','beds','price','number_of_reviews','accommodates','review_scores_rating']]
-listing_df1 = pd.concat((listing_df1, cancel_policy, instant_booking, room_type), axis = 1)
+listing_df1 = pd.concat((listing_df1, cancel_policy, instant_booking, room_type,property_type,neibourhood_type), axis = 1)
 listing_df1.head()
 listing_df1.shape
 listing_df1.columns
+
+listing_df1 = listing_df[['price']]
+listing_df1 = pd.concat((listing_df1, room_type,property_type), axis = 1)
 
 split_data= listing_df1.drop(['price'],axis=1)
 train1,test1,train2,test2=cross_validation.train_test_split(split_data,listing_df1.price, test_size=0.4,train_size = 0.6,random_state=13)
@@ -1050,8 +1081,30 @@ linear_reg.fit(train1, train2)
 linear_reg_error = metrics.median_absolute_error(test2, linear_reg.predict(test1))
 print ("Linear Regression: " + str(linear_reg_error))
 
+listing_df1.head()
 
-
+#----------------------------------------------------------------------
+# Evaluating Model Accuracy
+#----------------------------------------------------------------------
+# Calculating MSE
+from sklearn import metrics
+mse = np.sqrt(metrics.mean_squared_error(test2,linear_reg.predict(test1)))
+print('MSE: ',round(mse,2))
+# Calculating R squared
+print('R squared: ',metrics.r2_score(test2,linear_reg.predict(test1)))
+# K-Fold Cross Validation
+from sklearn.model_selection import cross_val_score
+linreg = LinearRegression()
+cv_scores = cross_val_score(linreg, X_train, Y_train, scoring = 'r2', cv = 10)
+print(cv_scores)
+print( "Average r2 score: ", np.round( np.mean( cv_scores ), 2 ) )
+print( "Standard deviation in r2 score: ", np.round( np.std( cv_scores ), 2) )
+# Understanding residuals
+residuals = Y_test - Y_pred
+sns.jointplot(Y,residuals,size = 6)
+plt.show()
+sns.distplot( residuals )
+plt.show()
 
 
 
