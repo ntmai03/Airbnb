@@ -304,11 +304,17 @@ train_df.head()
 ################################################################################
 # LINEAR REGRESSION
 ################################################################################
+features = [f for f in list(df.columns.values)
+                if f not in ['price']]
+
+formula = f'price ~ {"+".join(features)}'
+
+
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ### STATSMODELS ###
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 # create a fitted model
-lm1 = smf.ols(formula = 'price ~ calculated_host_listings_count+longitude+accommodates+number_of_reviews+availability_365+bathrooms+bedrooms+beds+review_scores_rating+reviews_per_month',data = train_df).fit()
+lm1 = smf.ols(formula = formula,data = train_df).fit()
 # print the coefficients
 lm1.params
 # print a summary of the fitted model
@@ -356,6 +362,11 @@ cv_scores = cross_val_score(linreg, X_train, Y_train, scoring = 'r2', cv = 10)
 print(cv_scores)
 print( "Average r2 score: ", np.round( np.mean( cv_scores ), 2 ) )
 print( "Standard deviation in r2 score: ", np.round( np.std( cv_scores ), 2) )
+
+
+################################################################################
+# REGULARIZATION
+################################################################################
 
 
 
